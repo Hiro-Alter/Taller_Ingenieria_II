@@ -11,6 +11,7 @@
 #define Sensor_80 7
 #define Sensor_100 8
 
+
 #define ELECTROVALVULA 10
 #define INDICACION 11
 #define ALERTA 12
@@ -27,13 +28,7 @@ double W[5]={0.5,1.2,2,2.8,3.0};
 
 //////////////////////////////////////////////////////////////
 
-int CM = digitalRead(Conmutador_Maestro);
-int VM = digitalRead(Valvula_Manual);
-int S20 = digitalRead(Sensor_20);
-int S40 = digitalRead(Sensor_40);
-int S60 = digitalRead(Sensor_60);
-int S80 = digitalRead(Sensor_80);
-int S100 = digitalRead(Sensor_100);
+
 
 /////////////////// Funcion Especial - Regresion C ///////////////////
 void RegresionCuadratica(double x[], double y[], double n){
@@ -102,7 +97,7 @@ bool dW_dt(){
 
 bool Nivel_Estimado(){
   //AQUI SE VA A PONER LA ECUACION DE LA REGRESION CUADRATICA
-  if(digitalRead(14)==1){
+  if(digitalRead(13)==1){
     return true;
   }else{
     return false;
@@ -126,112 +121,167 @@ void setup() {
 
 void loop() {
 
-  if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()){
+  int CM = digitalRead(Conmutador_Maestro);
+  int VM = digitalRead(Valvula_Manual);
+  int S20 = digitalRead(Sensor_20);
+  int S80 = digitalRead(Sensor_80);
+  int S100 = digitalRead(Sensor_100);
+
+  Serial.print("Estado: "); Serial.print(state); Serial.print(" ");
+  Serial.print("CM: "); Serial.print(CM); Serial.print(" ");
+  Serial.print("VM: "); Serial.print(VM); Serial.print(" ");
+  Serial.print("S20: "); Serial.print(S20); Serial.print(" ");
+  Serial.print("S80: "); Serial.print(S80); Serial.println(" ");
+  
+  if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //NINGUNA SALIDA 
     state = 0;
+    Serial.println("Estado 0");
+    delay(500);
+
   }
 
-  if(state = 0 && CM==1 && VM==1 && S20==0 && S80==0){
+  if(state == 0 && CM==1 && VM==1 && S20==0 && S80==0){
     //NINGUNA SALIDA
     state = 1;
+    Serial.println("Estado 1");
+    delay(500);
   }
 
-  if(state = 1 && CM==1 && VM==0 && S20==0 && S80==0){
+  if(state == 1 && CM==1 && VM==0 && S20==0 && S80==0){
     //ACTIVA ELECTROVALVULA
     state = 2;
+    Serial.println("Estado 2");
+    delay(500);
   }
 
-  if(state = 2 && CM==1 && VM==0 && S20==1 && S80==0){
+  if(state == 2 && CM==1 && VM==0 && S20==1 && S80==0){
     //ACTIVA ELECTROVALVULA
     state = 3;
+    Serial.println("Estado 3");
+    delay(500);
   }
 
-  if(state = 3 && CM==1 && VM==0 && S20==1 && S80==1){
+  if(state == 3 && CM==1 && VM==0 && S20==1 && S80==1){
     //DESACTIVA ELECTRO VALVULA, INDICACION VISUAL
     state = 4;
+    Serial.println("Estado 4");
+    delay(500);
   }
 
 
 
 ///////////////////////////////////////  ESTADO 4  80% ///////////////////////////////////////////////7
-  if(state = 4 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 4 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //INDICACION VISUAL
     state = 5;
+    Serial.println("Estado 5");
+    delay(500);
   }
-  if(state = 4 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 4 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     state = 0;
+    Serial.println("Estado 0");
+    delay(500);
   } 
-  if(state = 4 && CM==1 && VM==0 && S20==1 && S80==1 && Nivel_Estimado()==true){
+  if(state == 4 && CM==1 && VM==0 && S20==1 && S80==1 && Nivel_Estimado()==true){
     // EXISTE UN ERROR Y LA ELECTROVALVULA SIGUE PASANDO AGUA, SE DEBE DE GENERAR UNA ALERTA
     state = 6;
+    Serial.println("Estado 6");
+    delay(500);
   }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 5 ///////////////////////////////////////////////7
-  if(state = 5 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 5 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //ELECTROVALVULA
     state = 2;
+    Serial.println("Estado 2");
+    delay(500);
   }
 
-  if(state = 1 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 1 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     state = 0;
+    Serial.println("Estado 0");
+    delay(500);
   }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 6 ///////////////////////////////////////////////7
-  if(state = 6 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 6 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //NADA
     state = 0;
+    Serial.println("Estado 0");
+    delay(500);
   }
-  if(state = 6 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 6 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //indicacion visual
     state = 5;
+    Serial.println("Estado 5");
+    delay(500);
   }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   switch(state){
   case 0:
-    digitalWrite(ELECTROVALVULA, 0);
-    digitalWrite(INDICACION, 0);
-    digitalWrite(ALERTA, 0);
+    digitalWrite(ELECTROVALVULA, LOW);
+    digitalWrite(INDICACION, LOW);
+    digitalWrite(ALERTA, LOW);
+
+    Serial.println("Caso 0");
+    delay(500);
+
+
+    
     break;
 
   case 1:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
+
+    Serial.println("Caso 1");
+    delay(500);
+    //Serial.println(state);
     break;
 
   case 2:
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
+    Serial.println("Caso 2");
+    delay(500);
     break;
 
   case 3:
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
+    Serial.println("Caso 3");
+    delay(500);
     break;
 
   case 4:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
+    Serial.println("Caso 4");
+    delay(500);
     break;
 
   case 5:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
+    Serial.println("Caso 5");
+    delay(500);
     break;
 
   case 6:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 1);
+    Serial.println("Caso 6");
+    delay(500);
     break;
  }
 }
-
-
