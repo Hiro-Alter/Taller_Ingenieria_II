@@ -8,15 +8,15 @@
 #define Conmutador_Maestro 2
 #define Valvula_Manual 3
 #define Sensor_20 4
-#define Sensor_40 5
-#define Sensor_60 6
-#define Sensor_80 7
-#define Sensor_100 8
+//#define Sensor_40 5
+//#define Sensor_60 6
+#define Sensor_80 5
+//#define Sensor_100 
 
 
-#define ELECTROVALVULA 10
-#define INDICACION 11
-#define ALERTA 12
+#define ELECTROVALVULA 8
+#define INDICACION 9
+#define ALERTA 10
 
 /////////////////// Variables Globales ///////////////////
 int state = 0;
@@ -99,7 +99,7 @@ bool dW_dt(){
 
 bool Nivel_Estimado(){
   //AQUI SE VA A PONER LA ECUACION DE LA REGRESION CUADRATICA
-  if(digitalRead(13)==1){
+  if(digitalRead(6)==1){
     return true;
   }else{
     return false;
@@ -111,10 +111,10 @@ void setup() {
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
-  pinMode(Sensor_40, INPUT);
-  pinMode(Sensor_60, INPUT);
+  //pinMode(Sensor_40, INPUT);
+  //pinMode(Sensor_60, INPUT);
   pinMode(Sensor_80, INPUT);
-  pinMode(Sensor_100, INPUT);
+  //pinMode(Sensor_100, INPUT);
 
   pinMode(ELECTROVALVULA, OUTPUT);
   pinMode(INDICACION, OUTPUT);
@@ -127,13 +127,14 @@ void loop() {
   int VM = digitalRead(Valvula_Manual);
   int S20 = digitalRead(Sensor_20);
   int S80 = digitalRead(Sensor_80);
-  int S100 = digitalRead(Sensor_100);
+  //int S100 = digitalRead(Sensor_100);
 
   Serial.print("Estado: "); Serial.print(state); Serial.print(" ");
   Serial.print("CM: "); Serial.print(CM); Serial.print(" ");
   Serial.print("VM: "); Serial.print(VM); Serial.print(" ");
   Serial.print("S20: "); Serial.print(S20); Serial.print(" ");
-  Serial.print("S80: "); Serial.print(S80); Serial.println(" ");
+  Serial.print("S80: "); Serial.print(S80); Serial.print(" ");
+  Serial.print("N: "); Serial.print(digitalRead(6)); Serial.println(" ");
   
   if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //NINGUNA SALIDA 
@@ -174,17 +175,13 @@ void loop() {
 
 
 ///////////////////////////////////////  ESTADO 4  80% ///////////////////////////////////////////////7
-  if(state == 4 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 4 && CM==1 && VM==1 && S20==1 && S80==1 && Nivel_Estimado()==false){
     //INDICACION VISUAL
-    state = 5;
-    Serial.println("Estado 5");
+    state = 7;
+    Serial.println("Estado 7");
     delay(500);
   }
-  if(state == 4 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
-    state = 0;
-    Serial.println("Estado 0");
-    delay(500);
-  } 
+
   if(state == 4 && CM==1 && VM==0 && S20==1 && S80==1 && Nivel_Estimado()==true){
     // EXISTE UN ERROR Y LA ELECTROVALVULA SIGUE PASANDO AGUA, SE DEBE DE GENERAR UNA ALERTA
     state = 6;
@@ -192,6 +189,24 @@ void loop() {
     delay(500);
   }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+    //INDICACION VISUAL
+    state = 5;
+    Serial.println("Estado 5");
+    delay(500);
+  }
+
+  if(state == 7 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+    state = 0;
+    Serial.println("Estado 0");
+    delay(500);
+  } 
+
+
+
+
 
 ///////////////////////////////////////  ESTADO 5 ///////////////////////////////////////////////7
   if(state == 5 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
@@ -209,16 +224,11 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 6 ///////////////////////////////////////////////7
-  if(state == 6 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
-    //NADA
-    state = 0;
-    Serial.println("Estado 0");
-    delay(500);
-  }
-  if(state == 6 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+
+  if(state == 6 && CM==1 && VM==1 && S20==1 && S80==1 && Nivel_Estimado()==true){
     //indicacion visual
-    state = 5;
-    Serial.println("Estado 5");
+    state = 7;
+    Serial.println("Estado 7");
     delay(500);
   }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,5 +295,15 @@ void loop() {
     Serial.println("Caso 6");
     delay(500);
     break;
+
+  case 7:
+    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(INDICACION, 0);
+    digitalWrite(ALERTA, 0);
+    Serial.println("Caso 7");
+    delay(500);
+    break;
+
+
  }
 }
