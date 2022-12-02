@@ -41,7 +41,7 @@ void loop() {
  
   // Mostrar la información para ajustar el factor de calibración
   Serial.print("Leyendo: ");
-  Serial.print(bascula.get_units(), 1);
+  Serial.print(bascula.get_units());
   Serial.print(" kgs");
   Serial.print(" factor_calibracion: ");
   Serial.print(factor_calibracion);

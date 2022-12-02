@@ -34,6 +34,8 @@ float peso_anterior=0;
 float frecuencia = 100;
 float periodo_us = (1/frecuencia)*1000000;
 
+int tiempo=0;
+
 
 //////////////////////////////////////////////////////////////
 
@@ -140,6 +142,10 @@ void setup() {
 }
 
 void loop() {
+  unsigned long t[]={};
+  unsigned long miliseconds=millis();
+  t[tiempo]={miliseconds/1000};
+  tiempo++;
 
   int CM = digitalRead(Conmutador_Maestro);
   int VM = digitalRead(Valvula_Manual);
@@ -154,7 +160,10 @@ void loop() {
   Serial.print("S80: "); Serial.print(S80); Serial.print(" ");
   Serial.print("N: "); Serial.print(Nivel_Estimado()); Serial.print(" ");
   Serial.print("1%: "); Serial.print(dW_dt()); Serial.println(" ");
-  
+  Serial.println("");
+  Serial.print("t "); Serial.print(miliseconds); Serial.println(" ");
+
+
   if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //NINGUNA SALIDA 
     state = 0;
