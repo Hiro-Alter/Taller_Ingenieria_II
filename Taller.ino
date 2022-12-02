@@ -31,6 +31,9 @@ double W[5]={0.5,1.2,2,2.8,3.0};
 float peso_actual=0;
 float peso_anterior=0;
 
+float frecuencia = 100;
+float periodo_us = (1/frecuencia)*1000000;
+
 
 //////////////////////////////////////////////////////////////
 
