@@ -1,22 +1,22 @@
-
-
 /////////////////// Definiciones previas ///////////////////
 #include <Matrices.h>
 #include <math.h>
+#include <HX711.h>
 
 /////////////////// Puertos ///////////////////
-#define Conmutador_Maestro 2
-#define Valvula_Manual 3
-#define Sensor_20 4
+#define Conmutador_Maestro 15
+#define Valvula_Manual 16
+#define Sensor_20 17
 //#define Sensor_40 5
 //#define Sensor_60 6
-#define Sensor_80 5
-//#define Sensor_100 
+#define Sensor_80 18
+//#define Sensor_100
 
 
-#define ELECTROVALVULA 8
-#define INDICACION 9
-#define ALERTA 10
+
+#define ELECTROVALVULA 2
+#define INDICACION 3
+#define ALERTA 4
 
 /////////////////// Variables Globales ///////////////////
 int state = 0;
@@ -27,6 +27,10 @@ double P[3][1]={};
 
 double S[5]={5,10,18,20,24};
 double W[5]={0.5,1.2,2,2.8,3.0};
+
+float peso_actual=0;
+float peso_anterior=0;
+
 
 //////////////////////////////////////////////////////////////
 
@@ -94,12 +98,23 @@ void RegresionCuadratica(double x[], double y[], double n){
 }
 
 bool dW_dt(){
+
+  if(digitalRead(5)==1){
+    return true;
+  }else{
+    return false;
+  }
+
+  //variacion_peso = ((peso_actual-peso_anterior)/(t-(t-1)));
+
+  //peso_anterior=peso_actual;
+
  // Funcion para sacar el Diferencial de peso con respecto del diferencial de tiempo
 }
 
 bool Nivel_Estimado(){
   //AQUI SE VA A PONER LA ECUACION DE LA REGRESION CUADRATICA
-  if(digitalRead(6)==1){
+  if(digitalRead(A5)==1){
     return true;
   }else{
     return false;
@@ -134,7 +149,8 @@ void loop() {
   Serial.print("VM: "); Serial.print(VM); Serial.print(" ");
   Serial.print("S20: "); Serial.print(S20); Serial.print(" ");
   Serial.print("S80: "); Serial.print(S80); Serial.print(" ");
-  Serial.print("N: "); Serial.print(digitalRead(6)); Serial.println(" ");
+  Serial.print("N: "); Serial.print(Nivel_Estimado()); Serial.print(" ");
+  Serial.print("1%: "); Serial.print(dW_dt()); Serial.println(" ");
   
   if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
     //NINGUNA SALIDA 
@@ -167,6 +183,7 @@ void loop() {
 
   if(state == 3 && CM==1 && VM==0 && S20==1 && S80==1){
     //DESACTIVA ELECTRO VALVULA, INDICACION VISUAL
+    //peso_anterior=peso;
     state = 4;
     Serial.println("Estado 4");
     delay(500);
@@ -176,7 +193,8 @@ void loop() {
 
 ///////////////////////////////////////  ESTADO 4  80% ///////////////////////////////////////////////7
   if(state == 4 && CM==1 && VM==1 && S20==1 && S80==1 && Nivel_Estimado()==false){
-    //INDICACION VISUAL
+    //APAGA INDICACION VISUAL HASTA QUE SE TERMINE DE LLENAR EL TANQUE
+    //variacion_peso_inicial = ((peso_actual-peso_anterior)/1);
     state = 7;
     Serial.println("Estado 7");
     delay(500);
@@ -206,10 +224,10 @@ void loop() {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 5 ///////////////////////////////////////////////
-  if(state == 5 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
-    //ELECTROVALVULA
-    state = 2;
-    Serial.println("Estado 2");
+  if(state == 5 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false && dW_dt()==true){
+    //CIERRE LA VALVULA YA INDICACION INTERMITENTE
+    state = 8;
+    Serial.println("Estado 8");
     delay(500);
   }
 
@@ -219,6 +237,18 @@ void loop() {
     delay(500);
   }
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////  ESTADO 8 ///////////////////////////////////////////////
+
+if(state == 8 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
+    //ENCIENDA ELECTROVALVULA
+    state = 2;
+    Serial.println("Estado 2");
+    delay(500);
+  }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 ///////////////////////////////////////  ESTADO 6 ///////////////////////////////////////////////
 
@@ -302,6 +332,14 @@ void loop() {
     delay(500);
     break;
 
-
+  case 8:
+    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(INDICACION, 1);
+    delay(500);
+    digitalWrite(INDICACION, 0);
+    digitalWrite(ALERTA, 0);
+    Serial.println("Caso 8");
+    delay(500);
+    break;
  }
 }
