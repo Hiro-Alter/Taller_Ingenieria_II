@@ -192,7 +192,7 @@ void loop() {
 
 
 ///////////////////////////////////////  ESTADO 4  80% ///////////////////////////////////////////////7
-  if(state == 4 && CM==1 && VM==1 && S20==1 && S80==1 && Nivel_Estimado()==false){
+  if(state == 4 && CM==1 && VM==1 && S20==1 && S80==1){
     //APAGA INDICACION VISUAL HASTA QUE SE TERMINE DE LLENAR EL TANQUE
     //variacion_peso_inicial = ((peso_actual-peso_anterior)/1);
     state = 7;
@@ -209,14 +209,14 @@ void loop() {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 7 ///////////////////////////////////////////////
-  if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0){
     //INDICACION VISUAL
     state = 5;
     Serial.println("Estado 5");
     delay(500);
   }
 
-  if(state == 7 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 7 && CM==0 && VM==1 && S20==0 && S80==0){
     state = 0;
     Serial.println("Estado 0");
     delay(500);
@@ -224,14 +224,14 @@ void loop() {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 5 ///////////////////////////////////////////////
-  if(state == 5 && CM==1 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false && dW_dt()==true){
+  if(state == 5 && CM==1 && VM==1 && S20==0 && S80==0 && dW_dt()==true){
     //CIERRE LA VALVULA YA INDICACION INTERMITENTE
     state = 8;
     Serial.println("Estado 8");
     delay(500);
   }
 
-  if(state == 1 && CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(state == 1 && CM==0 && VM==1 && S20==0 && S80==0){
     state = 0;
     Serial.println("Estado 0");
     delay(500);
@@ -246,6 +246,15 @@ if(state == 8 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     Serial.println("Estado 2");
     delay(500);
   }
+
+if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
+    //APAGADO EL COMUTADOR MAESTRO, VAYA AL ESTADO 0
+    state = 0;
+    Serial.println("Estado 0");
+    delay(500);
+  }
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
