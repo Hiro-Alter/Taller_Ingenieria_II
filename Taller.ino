@@ -282,7 +282,6 @@ void loop() {
 
 
 
-
 ///////////////////////////////////////  ESTADO 7 ///////////////////////////////////////////////
   if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0){
     //INDICACION VISUAL
@@ -335,7 +334,6 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 2");
-    
     break;
 
   case 3:
@@ -343,7 +341,6 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 3");
-
     break;
 
   case 4:
@@ -365,7 +362,6 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 1);
     Serial.println("Caso 6");
-  
     break;
 
   case 7:
@@ -385,9 +381,9 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 8");
-    
+
     volumen_ciclo=(volumen_lleno-volumen_vacio);
-    volumen_total+=volumen_turno;
+    volumen_total+=volumen_ciclo;
     break;
  }
 
