@@ -24,7 +24,10 @@ HX711 bascula;
 
 /////////////////// Variables Globales ///////////////////
 int state = 0;
-int ecuacion =0;
+
+double v1=0;
+double v2=0;
+double v3=0;
 
 double A[3][3]={};
 double P[3][1]={};
@@ -33,10 +36,21 @@ double S[5]={5,10,18,20,24};
 
 float peso_actual=0;
 float peso_anterior=0;
+
+float volumen_actual=0;
+float volumen_anterior=0;
+
+float volumen_lleno=0;
+float volumen_vacio=0;
+
+float volumen_ciclo=0;
+float volumen_total=0;
+
 unsigned long tiempo_actual=0;
 unsigned long tiempo_anterior=0;
 
 float dwdt=0;
+float dvdt=0;
 float dwdt_inicial=0;
 
 
@@ -110,7 +124,6 @@ void RegresionCuadratica(double x[], double y[], double n){
 
 bool dW_dt(){
   float x=0.01*dwdt_inicial;
-
   if(dwdt<x){
     return true;
   }else{
@@ -119,7 +132,15 @@ bool dW_dt(){
 }
 
 bool Nivel_Estimado(){
-  //AQUI SE VA A PONER LA ECUACION DE LA REGRESION CUADRATICA
+  /*
+  double ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
+
+  if(ecuacion_nivel>0.9){
+    return true;
+  }else{
+    return false;
+  }
+*/
   if(digitalRead(A5)==1){
     return true;
   }else{
@@ -154,6 +175,7 @@ void setup() {
 void loop() {
   
   peso_actual=bascula.get_units();
+  volumen_actual=((peso_actual/9.8)/0,998); // Densidad del Agua en litros
   tiempo_actual=millis();
 
   delay(1000);
@@ -173,40 +195,40 @@ void loop() {
   Serial.print("1%: "); Serial.print(dW_dt()); Serial.println(" ");
   
 
-  Serial.print("PESO: "); Serial.print(peso_actual); Serial.print(" // "); Serial.print("PESO ANTERIOR: "); Serial.println(peso_anterior); 
-  Serial.print("tiempo: "); Serial.print(tiempo_actual); Serial.print(" // "); Serial.print("tiempo anterior: "); Serial.println(tiempo_anterior);
-  dwdt= (peso_actual-peso_anterior)/((tiempo_actual-tiempo_anterior)/1000);
+  Serial.print("Peso: "); Serial.print(peso_actual); Serial.print(" // "); Serial.print("Peso Anterior: "); Serial.println(peso_anterior); 
+  Serial.print("Tiempo: "); Serial.print(tiempo_actual); Serial.print(" // "); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior);
+
+
+  dwdt = (peso_actual-peso_anterior)/((tiempo_actual-tiempo_anterior)/1000);
+  dvdt = ((volumen_actual-volumen_anterior) / ((tiempo_actual-tiempo_anterior)/1000));
+
+  
   Serial.print(dwdt); Serial.println("w/s");
 
   
 
-  if(CM==0 && VM==1 && S20==0 && S80==0 && Nivel_Estimado()==false){
+  if(CM==0 && VM==1 && S20==0 && S80==0){
     //NINGUNA SALIDA 
     state = 0;
     Serial.println("Estado 0");
-    
-
   }
 
   if(state == 0 && CM==1 && VM==1 && S20==0 && S80==0){
     //NINGUNA SALIDA
     state = 1;
     Serial.println("Estado 1");
-  
   }
 
   if(state == 1 && CM==1 && VM==0 && S20==0 && S80==0){
     //ACTIVA ELECTROVALVULA
     state = 2;
     Serial.println("Estado 2");
-   
   }
 
   if(state == 2 && CM==1 && VM==0 && S20==1 && S80==0){
     //ACTIVA ELECTROVALVULA
     state = 3;
     Serial.println("Estado 3");
-   
   }
 
   if(state == 3 && CM==1 && VM==0 && S20==1 && S80==1){
@@ -215,9 +237,7 @@ void loop() {
     state = 4;
     Serial.println("Estado 4");
     dwdt_inicial=dwdt;
- 
   }
-
 
 
 ///////////////////////////////////////  ESTADO 4  80% ///////////////////////////////////////////////7
@@ -226,70 +246,33 @@ void loop() {
     //variacion_peso_inicial = ((peso_actual-peso_anterior)/1);
     state = 7;
     Serial.println("Estado 7");
-  
   }
 
   if(state == 4 && CM==1 && VM==0 && S20==1 && S80==1 && Nivel_Estimado()==true){
     // EXISTE UN ERROR Y LA ELECTROVALVULA SIGUE PASANDO AGUA, SE DEBE DE GENERAR UNA ALERTA
     state = 6;
     Serial.println("Estado 6");
- 
   }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////  ESTADO 7 ///////////////////////////////////////////////
-  if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0){
-    //INDICACION VISUAL
-    state = 5;
-    Serial.println("Estado 5");
-   
-  }
 
-  if(state == 7 && CM==0 && VM==1 && S20==0 && S80==0){
-    state = 0;
-    Serial.println("Estado 0");
-  
-  } 
-/////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////  ESTADO 5 ///////////////////////////////////////////////
   if(state == 5 && CM==1 && VM==1 && S20==0 && S80==0 && dW_dt()==true){
     //CIERRE LA VALVULA YA INDICACION INTERMITENTE
     state = 8;
     Serial.println("Estado 8");
-  
   }
 
   if(state == 1 && CM==0 && VM==1 && S20==0 && S80==0){
     state = 0;
     Serial.println("Estado 0");
-  
   }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////  ESTADO 8 ///////////////////////////////////////////////
-
-if(state == 8 && CM==1 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
-    //ENCIENDA ELECTROVALVULA
-    state = 2;
-    Serial.println("Estado 2");
-  
-  }
-
-if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
-    //APAGADO EL COMUTADOR MAESTRO, VAYA AL ESTADO 0
-    state = 0;
-    Serial.println("Estado 0");
-  
-  }
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////  ESTADO 6 ///////////////////////////////////////////////
-
   if(state == 6 && CM==1 && VM==1 && S20==1 && S80==1 && Nivel_Estimado()==true){
     //indicacion visual
     state = 7;
@@ -300,6 +283,36 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
 
 
 
+///////////////////////////////////////  ESTADO 7 ///////////////////////////////////////////////
+  if(state == 7 && CM==1 && VM==1 && S20==0 && S80==0){
+    //INDICACION VISUAL
+    state = 5;
+    Serial.println("Estado 5");
+  }
+
+  if(state == 7 && CM==0 && VM==1 && S20==0 && S80==0){
+    state = 0;
+    Serial.println("Estado 0");
+  } 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////  ESTADO 8 ///////////////////////////////////////////////
+if(state == 8 && CM==1 && VM==0 && S20==0 && S80==0){
+    //ENCIENDA ELECTROVALVULA
+    state = 2;
+    Serial.println("Estado 2");
+  }
+
+if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
+    //APAGADO EL COMUTADOR MAESTRO, VAYA AL ESTADO 0
+    state = 0;
+    Serial.println("Estado 0");
+  
+  }
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 ///////////////////////////////////////// SALIDAS //////////////////////////////////////
   switch(state){
@@ -308,16 +321,13 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, LOW);
     digitalWrite(ALERTA, LOW);
     Serial.println("Caso 0");
-   
     break;
 
   case 1:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
-
     Serial.println("Caso 1");
-  
     break;
 
   case 2:
@@ -325,7 +335,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 2");
-
+    
     break;
 
   case 3:
@@ -333,7 +343,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 3");
-   
+
     break;
 
   case 4:
@@ -341,7 +351,6 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 4");
-  
     break;
 
   case 5:
@@ -349,7 +358,6 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 5");
-   
     break;
 
   case 6:
@@ -357,7 +365,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 1);
     Serial.println("Caso 6");
-   
+  
     break;
 
   case 7:
@@ -366,8 +374,8 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 7");
     dwdt_inicial=dwdt;
+    volumen_lleno=volumen_actual;
     Serial.print("dwdt_inicial: ");Serial.println(dwdt_inicial);
-
     break;
 
   case 8:
@@ -378,9 +386,16 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0 && Nivel_Estimado()==false){
     digitalWrite(ALERTA, 0);
     Serial.println("Caso 8");
     
+    volumen_ciclo=(volumen_lleno-volumen_vacio);
+    volumen_total+=volumen_turno;
     break;
  }
+
+
  Serial.println(" ");
- tiempo_anterior=tiempo_actual;
+ 
  peso_anterior=peso_actual;
+ volumen_anterior=volumen_actual;
+ tiempo_anterior=tiempo_actual;
+
 }
