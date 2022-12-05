@@ -126,30 +126,39 @@ void RegresionCuadratica(double x[], double y[], double n){
 }
 
 bool dW_dt(){
+  if(digitalRead(4)==1){
+    return true;
+  }else{
+    return false;
+  }
+
+/*
   float x=0.01*dwdt_inicial;
   if(dwdt<x){
     return true;
   }else{
     return false;
   }
+  */
 }
 
 bool Nivel_Estimado(){
 
-  RegresionCuadratica(Sensores,Peso_Sensores,6);
   double ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
-  /*
+/*
   if(ecuacion_nivel>0.9){
     return true;
   }else{
     return false;
   }
 */
+
   if(digitalRead(A5)==1){
     return true;
   }else{
     return false;
   }
+
 }
 
 void setup() {
@@ -173,6 +182,8 @@ void setup() {
   //
   bascula.set_scale(factor_calibracion);
   //Funcion para obtener el peso//
+
+  RegresionCuadratica(Sensores,Peso_Sensores,6);
   
 }
 
