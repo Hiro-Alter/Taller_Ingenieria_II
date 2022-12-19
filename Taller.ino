@@ -1,7 +1,14 @@
 /////////////////// Definiciones previas ///////////////////
 #include <Matrices.h>
 #include <math.h>
+
 #include <HX711.h>
+
+#include <EasyBuzzer.h>
+
+#include <EEPROM.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
 
 // CLASES //
 HX711 bascula;
@@ -21,6 +28,8 @@ HX711 bascula;
 
 #define BASCULA_DT 2
 #define BASCULA_SCLK 3
+
+
 
 /////////////////// Variables Globales ///////////////////
 int state = 0;
@@ -55,6 +64,9 @@ float tiempo_anterior=0;
 float dwdt=0;
 float dvdt=0;
 float dwdt_inicial=0;
+
+//Nivel estimado
+double ecuacion_nivel = 0;
 
 
 // VARIABLES DE BASCULA //
@@ -144,7 +156,7 @@ bool dW_dt(){
 
 bool Nivel_Estimado(){
 
-  double ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
+  ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
 /*
   if(ecuacion_nivel>0.9){
     return true;
@@ -161,6 +173,63 @@ bool Nivel_Estimado(){
 
 }
 
+void SonidoAlerta()
+{
+  EasyBuzzer.beep(2000); 
+  delay(1000); 
+  EasyBuzzer.stopBeep();
+  delay (800);
+}
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+void mostrarElectroLCD()
+{
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Electrovalvula");
+  lcd.setCursor(0,1);
+  lcd.print("encendida");
+  lcd.clear();
+}
+
+void mostrarLCD()
+{
+  lcd.clear();
+  //masa
+  lcd.setCursor(0,0);
+  lcd.print("m:");
+  lcd.setCursor(2,0);
+  lcd.print(peso_actual);
+  //variacion peso
+  lcd.setCursor(8,0);
+  lcd.print("dW:");
+  lcd.setCursor(11,0);
+  lcd.print(dwdt);
+  //caudal
+  lcd.setCursor(0,1);
+  lcd.print("Q:");
+  lcd.setCursor(2,1);
+  lcd.print(dvdt);
+  //Nivel estimado
+  lcd.setCursor(8,1);
+  lcd.print("N:");
+  lcd.setCursor(11,1);
+  lcd.print((ecuacion_nivel*100)/17);
+  
+  delay(2000);
+  
+  //Limpieza salto de pantalla
+  lcd.clear();
+  
+  //Peso jugo
+  lcd.setCursor(0,0);
+  lcd.print("Peso turno:");
+  lcd.setCursor(12,0);
+  lcd.print(volumen_total);
+  delay(2000);
+}
+
 void setup() {
   Serial.begin(4800);
   pinMode(Conmutador_Maestro, INPUT);
@@ -172,7 +241,9 @@ void setup() {
   //pinMode(Sensor_100, INPUT);
   pinMode(ELECTROVALVULA, OUTPUT);
   pinMode(INDICACION, OUTPUT);
+
   pinMode(ALERTA, OUTPUT);
+  EasyBuzzer.setPin(ALERTA);
 
 
   //CONFIGURACIÓN BASCULA 
@@ -184,13 +255,24 @@ void setup() {
   //Funcion para obtener el peso//
 
   RegresionCuadratica(Sensores,Peso_Sensores,6);
+
+  //Configuración LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.print("Bienvenido");
+  delay(2000);
   
 }
 
 void loop() {
-
+  //Función para tener listo la función del buzzer
+  EasyBuzzer.update();
   delay(500);
-  
+
+  //mostrar vaiables en pantalla
+  mostrarLCD();
+
   peso_actual=max(bascula.get_units(),0); // TENER ENCUENTA A LA HORA DE CALIBRAR AL CELDA!!!!!!!
   volumen_actual=((peso_actual/9.8)/997); // Densidad del Agua en litros
   tiempo_actual=(millis()/1000);
@@ -312,12 +394,14 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
+    mostrarElectroLCD();
     break;
 
   case 3:
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
+    mostrarElectroLCD();
     break;
 
   case 4:
@@ -335,7 +419,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
   case 6:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
-    digitalWrite(ALERTA, 1);
+    SonidoAlerta(); //digitalWrite(ALERTA, 1);
     break;
 
   case 7:
@@ -378,12 +462,11 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
   Serial.println("//////////////////// VARIABLES ////////////////////");
   Serial.print("Peso: "); Serial.print(peso_actual); Serial.print("kg"); Serial.print("\t\t"); Serial.print("Peso Anterior: "); Serial.print(peso_anterior); Serial.println("kg");
   Serial.print("Volumen: "); Serial.print(volumen_actual,5); Serial.print("m3"); Serial.print("\t"); Serial.print("Volumen Anterior: "); Serial.print(volumen_anterior,5); Serial.println("m3");
-  Serial.print("Tiempo: "); Serial.print(tiempo_actual); Serial.print("\t\t"); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior);
+  Serial.print("Tiempo: "); Serial.print(tiempo_actual,10); Serial.print("\t\t"); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior,10);
   
   Serial.print("dw/dt: "); Serial.print(dwdt); Serial.print(" kg/s"); Serial.print("\t"); Serial.print("dv/dt: "); Serial.print(dvdt); Serial.println(" m3/s");
 
   Serial.println("//////////////////// ESTADOS ////////////////////");
   Serial.print("Estado Actual: "); Serial.println(state);
-
 }
 
