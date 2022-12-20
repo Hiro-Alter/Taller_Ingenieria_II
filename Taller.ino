@@ -14,13 +14,13 @@
 HX711 bascula;
 
 /////////////////// Puertos ///////////////////
-#define Conmutador_Maestro 15
-#define Valvula_Manual 16
-#define Sensor_20 17
-//#define Sensor_40 5
-//#define Sensor_60 6
-#define Sensor_80 18
-//#define Sensor_100
+#define Conmutador_Maestro 4  
+#define Valvula_Manual 13
+#define Sensor_20 14
+#define Sensor_40 15
+#define Sensor_60 16
+#define Sensor_80 17
+#define Sensor_100 18
 
 #define ELECTROVALVULA 6
 #define INDICACION 7
@@ -157,19 +157,19 @@ bool dW_dt(){
 bool Nivel_Estimado(){
 
   ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
-/*
+
   if(ecuacion_nivel>0.9){
     return true;
   }else{
     return false;
   }
-*/
 
-  if(digitalRead(A5)==1){
+
+  /*if(digitalRead()==1){
     return true;
   }else{
     return false;
-  }
+  }*/
 
 }
 
@@ -230,15 +230,25 @@ void mostrarLCD()
   delay(2000);
 }
 
+bool SA(int x){
+  float voltaje=(analogRead(x)*(5.0 / 1023.0));
+  
+  if(voltaje<=3.10){
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void setup() {
   Serial.begin(4800);
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
-  //pinMode(Sensor_40, INPUT);
-  //pinMode(Sensor_60, INPUT);
+  pinMode(Sensor_40, INPUT);
+  pinMode(Sensor_60, INPUT);
   pinMode(Sensor_80, INPUT);
-  //pinMode(Sensor_100, INPUT);
+  pinMode(Sensor_100, INPUT);
   pinMode(ELECTROVALVULA, OUTPUT);
   pinMode(INDICACION, OUTPUT);
 
@@ -256,22 +266,24 @@ void setup() {
 
   RegresionCuadratica(Sensores,Peso_Sensores,6);
 
+
+/*
   //Configuración LCD
   lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.print("Bienvenido");
   delay(2000);
-  
+  */
 }
 
 void loop() {
   //Función para tener listo la función del buzzer
-  EasyBuzzer.update();
+  //EasyBuzzer.update();
   delay(500);
 
   //mostrar vaiables en pantalla
-  mostrarLCD();
+  //mostrarLCD();
 
   peso_actual=max(bascula.get_units(),0); // TENER ENCUENTA A LA HORA DE CALIBRAR AL CELDA!!!!!!!
   volumen_actual=((peso_actual/9.8)/997); // Densidad del Agua en litros
@@ -280,10 +292,13 @@ void loop() {
   dwdt = (peso_actual-peso_anterior)/((tiempo_actual-tiempo_anterior));
   dvdt = ((volumen_actual-volumen_anterior) / ((tiempo_actual-tiempo_anterior)));
 
-  int CM = digitalRead(Conmutador_Maestro);
-  int VM = digitalRead(Valvula_Manual);
-  int S20 = digitalRead(Sensor_20);
-  int S80 = digitalRead(Sensor_80);
+  bool CM = digitalRead(Conmutador_Maestro);
+  bool VM = digitalRead(Valvula_Manual);
+  bool S20 = SA(Sensor_20);
+  bool S40 = SA(Sensor_40);
+  bool S60 = SA(Sensor_60);
+  bool S80 = SA(Sensor_80);
+  bool S100 = SA(Sensor_100);
   
   if(CM==0 && VM==1 && S20==0 && S80==0){
     //NINGUNA SALIDA 
@@ -394,14 +409,14 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
-    mostrarElectroLCD();
+    //mostrarElectroLCD();
     break;
 
   case 3:
     digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
-    mostrarElectroLCD();
+    //mostrarElectroLCD();
     break;
 
   case 4:
@@ -456,10 +471,18 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
   volumen_anterior=volumen_actual;
   tiempo_anterior=tiempo_actual;
 
-  Serial.println("//////////////////// ENTRADAS ////////////////////");
-  Serial.print("CM: "); Serial.print(CM); Serial.print("\t"); Serial.print("VM: "); Serial.print(VM); Serial.print("\t"); Serial.print("S20: "); Serial.print(S20); Serial.print("\t");
-  Serial.print("S80: "); Serial.print(S80); Serial.print("\t"); Serial.print("Nivel: "); Serial.print(Nivel_Estimado()); Serial.print("  "); Serial.print("1%: "); Serial.print(dW_dt()); Serial.println("\t");
-  Serial.println("//////////////////// VARIABLES ////////////////////");
+  Serial.println("///////////////////////////////// ENTRADAS /////////////////////////////////");
+  Serial.print("CM: "); Serial.print(CM); Serial.print("\t"); Serial.print("VM: "); Serial.print(VM); Serial.print("\t"); 
+  Serial.print("S20: "); Serial.print(SA(Sensor_20)); Serial.print("\t");
+  Serial.print("S40: "); Serial.print(SA(Sensor_40)); Serial.print("\t");
+  Serial.print("S60: "); Serial.print(SA(Sensor_60)); Serial.print("\t");
+  Serial.print("S80: "); Serial.print(SA(Sensor_80)); Serial.print("\t");
+  Serial.print("S100: "); Serial.print(SA(Sensor_100)); Serial.print("\t   ");
+  
+  
+
+  Serial.print("Nivel: "); Serial.print(Nivel_Estimado()); Serial.print("  "); Serial.print("1%: "); Serial.print(dW_dt()); Serial.println("\t");
+  Serial.println("///////////////////////////////// VARIABLES /////////////////////////////////");
   Serial.print("Peso: "); Serial.print(peso_actual); Serial.print("kg"); Serial.print("\t\t"); Serial.print("Peso Anterior: "); Serial.print(peso_anterior); Serial.println("kg");
   Serial.print("Volumen: "); Serial.print(volumen_actual,5); Serial.print("m3"); Serial.print("\t"); Serial.print("Volumen Anterior: "); Serial.print(volumen_anterior,5); Serial.println("m3");
   Serial.print("Tiempo: "); Serial.print(tiempo_actual,10); Serial.print("\t\t"); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior,10);
