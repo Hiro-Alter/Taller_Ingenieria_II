@@ -23,8 +23,8 @@ HX711 bascula;
 #define Sensor_100 18
 
 #define ELECTROVALVULA 6
-#define INDICACION 7
-#define ALERTA 8
+#define INDICACION 11
+#define ALERTA 12
 
 #define BASCULA_DT 2
 #define BASCULA_SCLK 3
@@ -41,7 +41,7 @@ double v3=0;
 double A[3][3]={};
 double P[3][1]={};
 
-double Sensores[6]={0,0.034,0.068,0.102,0.136,0.17};
+double Sensores[6]={0,3.4,6.8,10.2,13.6,17};
 double Peso_Sensores[6]={0,0.8,1.5,2.3,3.0,3.9};
 
 float peso_actual=0;
@@ -109,6 +109,8 @@ void RegresionCuadratica(double x[], double y[], double n){
       Xi2Yi += pow(x[i], 2)*y[i];
     }
 
+  
+  
   A[0][0]=n;
   A[0][1]=Xi;
   A[0][2]=Xi2;
@@ -158,7 +160,7 @@ bool Nivel_Estimado(){
 
   ecuacion_nivel = v1 + v2*peso_actual + v3*pow(peso_actual,2); 
 
-  if(ecuacion_nivel>0.9){
+  if(((ecuacion_nivel*100)/17) >= 90){
     return true;
   }else{
     return false;
@@ -193,41 +195,89 @@ void mostrarElectroLCD()
   lcd.clear();
 }
 
+
 void mostrarLCD()
 {
   lcd.clear();
   //masa
-  lcd.setCursor(0,0);
-  lcd.print("m:");
-  lcd.setCursor(2,0);
-  lcd.print(peso_actual);
+    lcd.setCursor(0,0);
+    lcd.print("m:");
+    lcd.setCursor(2,0);
+    lcd.print(peso_actual);
   //variacion peso
-  lcd.setCursor(8,0);
-  lcd.print("dW:");
-  lcd.setCursor(11,0);
-  lcd.print(dwdt);
+    lcd.setCursor(8,0);
+    lcd.print("dW:");
+    lcd.setCursor(11,0);
+    lcd.print(dwdt);
   //caudal
-  lcd.setCursor(0,1);
-  lcd.print("Q:");
-  lcd.setCursor(2,1);
-  lcd.print(dvdt);
+    lcd.setCursor(0,1);
+    lcd.print("Q:");
+    lcd.setCursor(2,1);
+    lcd.print(dvdt);
   //Nivel estimado
-  lcd.setCursor(8,1);
-  lcd.print("N:");
-  lcd.setCursor(11,1);
-  lcd.print((ecuacion_nivel*100)/17);
+    lcd.setCursor(8,1);
+    lcd.print("N:");
+    lcd.setCursor(11,1);
+    lcd.print(constrain( (ecuacion_nivel*100)/17, 0,100),0); lcd.print("%");
+
+
+  /*lcd.clear();
+  unsigned long t0 = 0;
+  int periodo = 2000;
+  t0 = millis();
+  while(millis() < t0+periodo)
+  {
+    // espere [periodo] milisegundos
   
-  delay(2000);
+    
+  //masa
+    lcd.setCursor(0,0);
+    lcd.print("m:");
+    lcd.setCursor(2,0);
+    lcd.print(peso_actual);
+  //variacion peso
+    lcd.setCursor(8,0);
+    lcd.print("dW:");
+    lcd.setCursor(11,0);
+    lcd.print(dwdt);
+  //caudal
+    lcd.setCursor(0,1);
+    lcd.print("Q:");
+    lcd.setCursor(2,1);
+    lcd.print(dvdt);
+  //Nivel estimado
+    lcd.setCursor(8,1);
+    lcd.print("N:");
+    lcd.setCursor(11,1);
+    lcd.print((ecuacion_nivel*100)/17);
+  }
   
-  //Limpieza salto de pantalla
+  periodo = 3000;
   lcd.clear();
+  if(millis() < t0+periodo)
+  {
+      //Limpieza salto de pantalla
+    
   
-  //Peso jugo
-  lcd.setCursor(0,0);
-  lcd.print("Peso turno:");
-  lcd.setCursor(12,0);
-  lcd.print(volumen_total);
-  delay(2000);
+    lcd.setCursor(0,0);
+    //Peso jugo
+    lcd.print("Peso turno:");
+    lcd.setCursor(12,0);
+    lcd.print(volumen_total);
+
+  }
+  */
+
+}
+
+void mostarLCD2()
+{
+  lcd.clear();
+    lcd.setCursor(0,0);
+    //Peso jugo
+    lcd.print("Peso turno:");
+    lcd.setCursor(12,0);
+    lcd.print(volumen_total);
 }
 
 bool SA(int x){
@@ -264,17 +314,17 @@ void setup() {
   bascula.set_scale(factor_calibracion);
   //Funcion para obtener el peso//
 
-  RegresionCuadratica(Sensores,Peso_Sensores,6);
+  RegresionCuadratica(Peso_Sensores, Sensores,6);
 
 
-/*
+
   //Configuración LCD
   lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.print("Bienvenido");
   delay(2000);
-  */
+  
 }
 
 void loop() {
@@ -282,8 +332,7 @@ void loop() {
   //EasyBuzzer.update();
   delay(500);
 
-  //mostrar vaiables en pantalla
-  //mostrarLCD();
+  
 
   peso_actual=max(bascula.get_units(),0); // TENER ENCUENTA A LA HORA DE CALIBRAR AL CELDA!!!!!!!
   volumen_actual=((peso_actual/9.8)/997); // Densidad del Agua en litros
@@ -485,11 +534,14 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
   Serial.println("///////////////////////////////// VARIABLES /////////////////////////////////");
   Serial.print("Peso: "); Serial.print(peso_actual); Serial.print("kg"); Serial.print("\t\t"); Serial.print("Peso Anterior: "); Serial.print(peso_anterior); Serial.println("kg");
   Serial.print("Volumen: "); Serial.print(volumen_actual,5); Serial.print("m3"); Serial.print("\t"); Serial.print("Volumen Anterior: "); Serial.print(volumen_anterior,5); Serial.println("m3");
-  Serial.print("Tiempo: "); Serial.print(tiempo_actual,10); Serial.print("\t\t"); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior,10);
+  Serial.print("Tiempo: "); Serial.print(tiempo_actual,5); Serial.print("\t\t"); Serial.print("Tiempo Anterior: "); Serial.println(tiempo_anterior,5);
   
   Serial.print("dw/dt: "); Serial.print(dwdt); Serial.print(" kg/s"); Serial.print("\t"); Serial.print("dv/dt: "); Serial.print(dvdt); Serial.println(" m3/s");
 
   Serial.println("//////////////////// ESTADOS ////////////////////");
   Serial.print("Estado Actual: "); Serial.println(state);
+
+  //mostrar vaiables en pantalla
+  mostrarLCD();
 }
 
