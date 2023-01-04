@@ -70,7 +70,7 @@ double ecuacion_nivel = 0;
 
 
 // VARIABLES DE BASCULA //
-float factor_calibracion = -20780.0;
+float factor_calibracion = -100670;
 
 //////////////////////////////////////////////////////////////
 
@@ -293,6 +293,7 @@ bool SA(int x){
 
 void setup() {
   Serial.begin(4800);
+
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
@@ -304,9 +305,7 @@ void setup() {
   pinMode(INDICACION, OUTPUT);
   pinMode(ALERTA, OUTPUT);
 
-
   EasyBuzzer.setPin(ALERTA);
-
 
   //CONFIGURACIÓN BASCULA 
   bascula.begin(BASCULA_DT, BASCULA_SCLK);
@@ -317,8 +316,6 @@ void setup() {
   //Funcion para obtener el peso//
 
   RegresionCuadratica(Peso_Sensores, Sensores,6);
-
-
 
   //Configuración LCD
   lcd.init();
