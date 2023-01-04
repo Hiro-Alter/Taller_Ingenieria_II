@@ -20,9 +20,9 @@ HX711 bascula;
 #define Sensor_40 15
 #define Sensor_60 16
 #define Sensor_80 17
-#define Sensor_100 18
+#define Sensor_100 A6
 
-#define ELECTROVALVULA 6
+#define ELECTROVALVULA 5
 #define INDICACION 11
 #define ALERTA 12
 
@@ -140,11 +140,12 @@ void RegresionCuadratica(double x[], double y[], double n){
 }
 
 bool dW_dt(){
+  /*
   if(digitalRead(4)==1){
     return true;
   }else{
     return false;
-  }
+  }*/
 
 /*
   float x=0.01*dwdt_inicial;
@@ -301,8 +302,9 @@ void setup() {
   pinMode(Sensor_100, INPUT);
   pinMode(ELECTROVALVULA, OUTPUT);
   pinMode(INDICACION, OUTPUT);
-
   pinMode(ALERTA, OUTPUT);
+
+
   EasyBuzzer.setPin(ALERTA);
 
 
@@ -443,51 +445,51 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
 ///////////////////////////////////////// SALIDAS //////////////////////////////////////
   switch(state){
   case 0:
-    digitalWrite(ELECTROVALVULA, LOW);
-    digitalWrite(INDICACION, LOW);
-    digitalWrite(ALERTA, LOW);
-    break;
-
-  case 1:
     digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     break;
 
-  case 2:
+  case 1:
     digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(INDICACION, 0);
+    digitalWrite(ALERTA, 0);
+    break;
+
+  case 2:
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 3:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 4:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 5:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 6:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     SonidoAlerta(); //digitalWrite(ALERTA, 1);
     break;
 
   case 7:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
 
@@ -502,7 +504,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 8:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     delay(400);
     digitalWrite(INDICACION, 0);
