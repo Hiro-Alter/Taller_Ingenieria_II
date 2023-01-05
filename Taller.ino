@@ -34,6 +34,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 
 /////////////////// Variables Globales ///////////////////
 int state = 0;
+int address = 2;
 
 double v1=0;
 double v2=0;
@@ -146,9 +147,103 @@ void RegresionCuadratica(double x[], double y[], double n){
   v2 = rMultiplicacion[1][0];
   v3 = rMultiplicacion[2][0];
 
+  //Guardar en la memoria
+  Guardar_Memoria(v1);
+  Guardar_Memoria(v2);
+  Guardar_Memoria(v3);
+
   //Serial.print("La ecuación de la regresión cuadrática es la siguiente:\n y = %f X^2 + %f X + %f", v3, v2, v1);
   Serial.print("La ecuacion de la regresion cuadratica es la siguiente: "); 
   Serial.print(v3, 8); Serial.print(" , "); Serial.print(v2, 8); Serial.print(" , "); Serial.println(v1, 8);
+}
+
+/* MANEJO DE LA MEMORIA
+   DIRECCIONES RESERVADAS
+   0: verificacion si se ha realizado la primera calibracion (coheficientes)
+   1: direccion actual que ocupa al momento de guarda un valor
+   2-9: coheficiente v1
+   10-7: coheficiente v2
+   18-25: coheficiente v3
+ */
+ 
+double Leer_Memoria(int address){
+  double aux = 0;
+  EEPROM.get(address, aux);
+  return aux;
+}
+
+void Guardar_Memoria(double &valor) {
+  if(address < 125){
+    EEPROM.update(address, valor);
+    address += sizeof(valor);
+    EEPROM.update(1, address);
+  }
+  else{
+    address = 26;
+    EEPROM.update(address, valor);
+    address += sizeof(valor);
+    EEPROM.update(1, address);
+  }
+}
+
+void LCD2(int a, int b, String ab, int c, int d, String cd){
+    lcd.setCursor(a,b);
+    lcd.print(ab);
+    lcd.setCursor(c,d);
+    lcd.print(cd);
+}
+
+void Peso_Sensor(){
+  lcd.setCursor(0,0);
+  lcd.print("LLENANDO TANQUE");
+  Peso_Sensores[0]= max(bascula.get_units(),0);
+  digitalWrite(ELECTROVALVULA, HIGH);
+  do{
+    Peso_Sensores[1]= max(bascula.get_units(),0);
+    LCD2(4,0,"NIVEL 20",3,1,"ALCANZADO");
+  }while(SA(Sensor_20)!= true);
+  
+  do{
+    Peso_Sensores[2]= max(bascula.get_units(),0);
+    LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO");
+  }while(SA(Sensor_40)!= true);
+  
+  do{
+    Peso_Sensores[3]= max(bascula.get_units(),0);
+    LCD2(4,0,"NIVEL 60",3,1,"ALCANZADO");
+  }while(SA(Sensor_60)!= true);
+  
+  do{
+    Peso_Sensores[4]= max(bascula.get_units(),0);
+    LCD2(4,0,"NIVEL 80",3,1,"ALCANZADO");;
+  }while(SA(Sensor_80)!= true);
+  
+  do{
+    Peso_Sensores[5]= max(bascula.get_units(),0);
+    LCD2(3,0,"NIVEL 100",3,1,"ALCANZADO");
+  }while(SA(Sensor_100)!= true);
+  digitalWrite(ELECTROVALVULA, LOW);
+}
+
+void Calibracion_Inicial(){  
+  if((int)Leer_Memoria(0) != 1){
+    LCD2(1,0,"CONFIGURACION",4,1,"INICIAL");
+    delay(1000);
+    if(digitalRead(Conmutador_Maestro)==1 && digitalRead(Valvula_Manual)==0){
+      Peso_Sensor();
+    }
+    RegresionCuadratica(Peso_Sensores, Sensores,6);
+    EEPROM.write(0,(int)1);
+    LCD2(1,0,"CONFIGURACION",3,1,"FINALIZADA");
+  }
+  else{
+    v1 = Leer_Memoria(address);
+    address += sizeof(v1);
+    v2 = Leer_Memoria(address);
+    address += sizeof(v1);
+    v3 = Leer_Memoria(address);
+    address += sizeof(v1);
+  }
 }
 
 bool dW_dt(){
@@ -321,7 +416,7 @@ void ALARMA(){
 
 void setup() {
   Serial.begin(4800);
-
+  //EEMPRO.write(0,(int)10); //descomentar para volver a realizar prueba de calibracion
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
@@ -345,7 +440,7 @@ void setup() {
   bascula.set_scale(factor_calibracion); //Funcion para obtener el peso//
 
   // FUNCION PARA LA REGRESION CUADRATICA
-  RegresionCuadratica(Peso_Sensores, Sensores,6);
+  //RegresionCuadratica(Peso_Sensores, Sensores,6);
 
   //Configuración LCD
   
@@ -353,6 +448,13 @@ void setup() {
   lcd.backlight();
   lcd.clear();
   lcd.print("Bienvenido");
+
+  //Calibracion inicial de la regresion cuadratica
+  Calibracion_Inicial();
+
+  //Configuracion de la direccion en memoria
+  address = (int)Leer_Memoria(1);
+
   delay(2000);
   
 }
