@@ -200,28 +200,33 @@ void Peso_Sensor(){
   digitalWrite(ELECTROVALVULA, HIGH);
   do{
     Peso_Sensores[1]= max(bascula.get_units(),0);
-    LCD2(4,0,"NIVEL 20",3,1,"ALCANZADO");
   }while(SA(Sensor_20)!= true);
+
+  LCD2(4,0,"NIVEL 20",3,1,"ALCANZADO");
   
   do{
     Peso_Sensores[2]= max(bascula.get_units(),0);
-    LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO");
   }while(SA(Sensor_40)!= true);
+
+  LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO");
   
   do{
     Peso_Sensores[3]= max(bascula.get_units(),0);
-    LCD2(4,0,"NIVEL 60",3,1,"ALCANZADO");
   }while(SA(Sensor_60)!= true);
+  
+  LCD2(4,0,"NIVEL 60",3,1,"ALCANZADO");
   
   do{
     Peso_Sensores[4]= max(bascula.get_units(),0);
-    LCD2(4,0,"NIVEL 80",3,1,"ALCANZADO");;
   }while(SA(Sensor_80)!= true);
-  
+
+  LCD2(4,0,"NIVEL 80",3,1,"ALCANZADO");
+
   do{
     Peso_Sensores[5]= max(bascula.get_units(),0);
-    LCD2(3,0,"NIVEL 100",3,1,"ALCANZADO");
   }while(SA(Sensor_100)!= true);
+  
+  LCD2(3,0,"NIVEL 100",3,1,"ALCANZADO");
   digitalWrite(ELECTROVALVULA, LOW);
 }
 
