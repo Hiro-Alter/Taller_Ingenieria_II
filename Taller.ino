@@ -12,6 +12,7 @@
 
 // CLASES //
 HX711 bascula;
+LiquidCrystal_I2C lcd(0x27,16,2);
 
 /////////////////// Puertos ///////////////////
 #define Conmutador_Maestro 4  
@@ -68,9 +69,20 @@ float dwdt_inicial=0;
 //Nivel estimado
 double ecuacion_nivel = 0;
 
-
 // VARIABLES DE BASCULA //
 float factor_calibracion = -100670;
+
+// CONFIGURACION PARALELISMO
+bool ledState=LOW;
+bool BuzzerState=LOW;
+
+unsigned long currentMillisLed=0;
+unsigned long previousMillisLed=0;
+const long time = 200;
+
+unsigned long currentMillisBuzzer=0;
+unsigned long previousMillisBuzzer=0;
+const long time2 = 1000;
 
 //////////////////////////////////////////////////////////////
 
@@ -147,14 +159,14 @@ bool dW_dt(){
     return false;
   }*/
 
-/*
+
   float x=0.01*dwdt_inicial;
   if(dwdt<x){
     return true;
   }else{
     return false;
   }
-  */
+
 }
 
 bool Nivel_Estimado(){
@@ -176,15 +188,7 @@ bool Nivel_Estimado(){
 
 }
 
-void SonidoAlerta()
-{
-  EasyBuzzer.beep(2000); 
-  delay(1000); 
-  EasyBuzzer.stopBeep();
-  delay (800);
-}
 
-LiquidCrystal_I2C lcd(0x27,16,2);
 
 void mostrarElectroLCD()
 {
@@ -281,6 +285,7 @@ void mostarLCD2()
     lcd.print(volumen_total);
 }
 
+
 bool SA(int x){
   float voltaje=(analogRead(x)*(5.0 / 1023.0));
   
@@ -290,6 +295,29 @@ bool SA(int x){
     return false;
   }
 }
+
+
+void Parpadeo(){
+  currentMillisLed = millis();
+
+  digitalWrite(INDICACION, 1);
+  if(currentMillisLed-previousMillisLed >= 1000){
+    previousMillisLed=currentMillisLed;
+    digitalWrite(INDICACION, 0);
+  }
+}
+
+void ALARMA(){
+  currentMillisBuzzer = millis();
+
+  EasyBuzzer.beep(1500);
+  if(currentMillisBuzzer-previousMillisBuzzer >= 500){
+    previousMillisLed=currentMillisLed;
+    EasyBuzzer.stopBeep();
+  }
+}
+
+
 
 void setup() {
   Serial.begin(4800);
@@ -305,19 +333,22 @@ void setup() {
   pinMode(INDICACION, OUTPUT);
   pinMode(ALERTA, OUTPUT);
 
-  EasyBuzzer.setPin(ALERTA);
+
+  //CONFIGURACION BUZZER
+  EasyBuzzer.setPin(12);
 
   //CONFIGURACIÓN BASCULA 
   bascula.begin(BASCULA_DT, BASCULA_SCLK);
   bascula.tare();
   long zero_factor = bascula.read_average();
   //
-  bascula.set_scale(factor_calibracion);
-  //Funcion para obtener el peso//
+  bascula.set_scale(factor_calibracion); //Funcion para obtener el peso//
 
+  // FUNCION PARA LA REGRESION CUADRATICA
   RegresionCuadratica(Peso_Sensores, Sensores,6);
 
   //Configuración LCD
+  
   lcd.init();
   lcd.backlight();
   lcd.clear();
@@ -327,10 +358,11 @@ void setup() {
 }
 
 void loop() {
-  //Función para tener listo la función del buzzer
-  //EasyBuzzer.update();
-  delay(500);
+  EasyBuzzer.update();
 
+  // 
+
+  
   
 
   peso_actual=max(bascula.get_units(),0); // TENER ENCUENTA A LA HORA DE CALIBRAR AL CELDA!!!!!!!
@@ -341,7 +373,7 @@ void loop() {
   dvdt = ((volumen_actual-volumen_anterior) / ((tiempo_actual-tiempo_anterior)));
 
   bool CM = digitalRead(Conmutador_Maestro);
-  bool VM = digitalRead(Valvula_Manual);
+  bool VM = !(digitalRead(Valvula_Manual));
   bool S20 = SA(Sensor_20);
   bool S40 = SA(Sensor_40);
   bool S60 = SA(Sensor_60);
@@ -448,47 +480,49 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 1:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     break;
 
   case 2:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 3:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 4:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 5:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 6:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
-    SonidoAlerta(); //digitalWrite(ALERTA, 1);
+    ALARMA();
+    //SonidoAlerta(); 
+    //digitalWrite(ALERTA, 1);
     break;
 
   case 7:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
-    digitalWrite(ALERTA, 0);
+    EasyBuzzer.stopBeep();
 
     delay(100); //MEDIO SEGUNDO PARA ESPERAR EL AUMENTO DEL DW/DT Y QUE LA VARIABLE NO SEA 0
     
@@ -501,10 +535,8 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 8:
-    digitalWrite(ELECTROVALVULA, 1);
-    digitalWrite(INDICACION, 1);
-    delay(400);
-    digitalWrite(INDICACION, 0);
+    digitalWrite(ELECTROVALVULA,0);
+    Parpadeo();
     digitalWrite(ALERTA, 0);
 
     volumen_ciclo=(volumen_lleno-volumen_vacio);
