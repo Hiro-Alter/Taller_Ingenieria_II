@@ -403,20 +403,21 @@ void Parpadeo(){
 }
 
 void ALARMA(){
-  currentMillisBuzzer = millis();
+  //currentMillisBuzzer = millis();
 
-  EasyBuzzer.beep(1500);
-  if(currentMillisBuzzer-previousMillisBuzzer >= 500){
+  EasyBuzzer.beep(1500,1);
+
+  /*if(currentMillisBuzzer-previousMillisBuzzer >= 1000){
     previousMillisLed=currentMillisLed;
     EasyBuzzer.stopBeep();
-  }
+  }*/
 }
 
 
 
 void setup() {
   Serial.begin(4800);
-  //EEMPRO.write(0,(int)10); //descomentar para volver a realizar prueba de calibracion
+  EEPROM.write(0,(int)10); //descomentar para volver a realizar prueba de calibracion
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
@@ -576,45 +577,45 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
 ///////////////////////////////////////// SALIDAS //////////////////////////////////////
   switch(state){
   case 0:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     break;
 
   case 1:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     break;
 
   case 2:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 3:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 4:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 5:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 6:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     ALARMA();
     //SonidoAlerta(); 
@@ -622,7 +623,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 7:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     EasyBuzzer.stopBeep();
 
@@ -637,7 +638,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 8:
-    digitalWrite(ELECTROVALVULA,0);
+    digitalWrite(ELECTROVALVULA,1);
     Parpadeo();
     digitalWrite(ALERTA, 0);
 
