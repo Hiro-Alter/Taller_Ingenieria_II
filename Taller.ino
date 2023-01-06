@@ -193,55 +193,70 @@ void LCD2(int a, int b, String ab, int c, int d, String cd){
     lcd.print(cd);
 }
 
-void Peso_Sensor(){
-  lcd.setCursor(0,0);
-  lcd.print("LLENANDO TANQUE");
-  Peso_Sensores[0]= max(bascula.get_units(),0);
-  digitalWrite(ELECTROVALVULA, HIGH);
-  do{
+void Peso_Sensor(bool &cr, int &comprobar){
+
+  if(SA(Sensor_20) == true && SA(Sensor_40) == false){
     Peso_Sensores[1]= max(bascula.get_units(),0);
-  }while(SA(Sensor_20)!= true);
+    if (cr == true) {LCD2(4,0,"NIVEL 20",3,1,"ALCANZADO"); cr = !cr;}
+  }
 
-  LCD2(4,0,"NIVEL 20",3,1,"ALCANZADO");
-  
-  do{
+  else if(SA(Sensor_40) == true && SA(Sensor_60) == false){
     Peso_Sensores[2]= max(bascula.get_units(),0);
-  }while(SA(Sensor_40)!= true);
+    if (cr == false) {LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO"); cr = !cr;}
+  }
 
-  LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO");
-  
-  do{
+  else if(SA(Sensor_60) == true && SA(Sensor_80) == false){
     Peso_Sensores[3]= max(bascula.get_units(),0);
-  }while(SA(Sensor_60)!= true);
-  
-  LCD2(4,0,"NIVEL 60",3,1,"ALCANZADO");
-  
-  do{
+    if (cr == true) {LCD2(4,0,"NIVEL 60",3,1,"ALCANZADO"); cr = !cr;}
+  }
+
+  else if(SA(Sensor_80) == true && SA(Sensor_100) == false){
     Peso_Sensores[4]= max(bascula.get_units(),0);
-  }while(SA(Sensor_80)!= true);
+    if (cr == false) {LCD2(4,0,"NIVEL 40",3,1,"ALCANZADO"); cr = !cr;}
+  }
 
-  LCD2(4,0,"NIVEL 80",3,1,"ALCANZADO");
-
-  do{
+  else if(SA(Sensor_100) == true && SA(Sensor_80) == true){
     Peso_Sensores[5]= max(bascula.get_units(),0);
-  }while(SA(Sensor_100)!= true);
-  
-  LCD2(3,0,"NIVEL 100",3,1,"ALCANZADO");
-  digitalWrite(ELECTROVALVULA, LOW);
+    lcd.clear();
+    LCD2(3,0,"NIVEL 100",3,1,"ALCANZADO");
+    digitalWrite(ELECTROVALVULA, LOW);
+    cr = false;
+    comprobar = 1;
+  }
 }
 
-void Calibracion_Inicial(){  
-  if((int)Leer_Memoria(0) != 1){
+void Calibracion_Inicial(){
+  int comprobar = (int)Leer_Memoria(0);
+  bool cr = true;
+
+  if (comprobar != 1){
+    lcd.clear();
     LCD2(1,0,"CONFIGURACION",4,1,"INICIAL");
     delay(1000);
-    if(digitalRead(Conmutador_Maestro)==1 && digitalRead(Valvula_Manual)==0){
-      Peso_Sensor();
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("LLENANDO TANQUE");
+    Peso_Sensores[0]= max(bascula.get_units(),0);
+    digitalWrite(ELECTROVALVULA, HIGH);
+
+    while (comprobar != 1) {
+      if(digitalRead(Conmutador_Maestro) == HIGH && digitalRead(Valvula_Manual) == HIGH){
+        Peso_Sensor(cr,comprobar);
+      }
+      else{
+        lcd.clear();
+        LCD2(3,0,"POR FAVOR",3,1,"CERRAR VM");
+        delay(3000);
+      }
     }
+
     RegresionCuadratica(Peso_Sensores, Sensores,6);
-    EEPROM.write(0,(int)1);
+    EEPROM.write(0,comprobar);
+    cr = false;
     LCD2(1,0,"CONFIGURACION",3,1,"FINALIZADA");
   }
-  else{
+
+  if(comprobar == 1 && cr == true){
     v1 = Leer_Memoria(address);
     address += sizeof(v1);
     v2 = Leer_Memoria(address);
