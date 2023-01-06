@@ -44,7 +44,7 @@ double A[3][3]={};
 double P[3][1]={};
 
 double Sensores[6]={0,3.4,6.8,10.2,13.6,17};
-double Peso_Sensores[6]={0,0.8,1.5,2.3,3.0,3.9};
+double Peso_Sensores[6]={0,0.96,2.12,3.39,4.75,6.26};
 
 float peso_actual=0;
 float peso_anterior=0;
@@ -187,6 +187,7 @@ void Guardar_Memoria(double &valor) {
 }
 
 void LCD2(int a, int b, String ab, int c, int d, String cd){
+    lcd.clear();
     lcd.setCursor(a,b);
     lcd.print(ab);
     lcd.setCursor(c,d);
@@ -423,20 +424,21 @@ void Parpadeo(){
 }
 
 void ALARMA(){
-  currentMillisBuzzer = millis();
+  //currentMillisBuzzer = millis();
 
-  EasyBuzzer.beep(1500);
-  if(currentMillisBuzzer-previousMillisBuzzer >= 500){
+  EasyBuzzer.beep(1500,1);
+
+  /*if(currentMillisBuzzer-previousMillisBuzzer >= 1000){
     previousMillisLed=currentMillisLed;
     EasyBuzzer.stopBeep();
-  }
+  }*/
 }
 
 
 
 void setup() {
   Serial.begin(4800);
-  //EEMPRO.write(0,(int)10); //descomentar para volver a realizar prueba de calibracion
+  //EEPROM.write(0,(int)1); //descomentar para volver a realizar prueba de calibracion
   pinMode(Conmutador_Maestro, INPUT);
   pinMode(Valvula_Manual, INPUT);
   pinMode(Sensor_20, INPUT);
@@ -460,17 +462,16 @@ void setup() {
   bascula.set_scale(factor_calibracion); //Funcion para obtener el peso//
 
   // FUNCION PARA LA REGRESION CUADRATICA
-  //RegresionCuadratica(Peso_Sensores, Sensores,6);
+  RegresionCuadratica(Peso_Sensores, Sensores,6);
 
   //Configuración LCD
-  
   lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.print("Bienvenido");
 
   //Calibracion inicial de la regresion cuadratica
-  Calibracion_Inicial();
+  //Calibracion_Inicial();
 
   //Configuracion de la direccion en memoria
   address = (int)Leer_Memoria(1);
@@ -596,45 +597,45 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
 ///////////////////////////////////////// SALIDAS //////////////////////////////////////
   switch(state){
   case 0:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     break;
 
   case 1:
-    digitalWrite(ELECTROVALVULA, 0);
-    digitalWrite(INDICACION, 0);
+    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 2:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 3:
-    digitalWrite(ELECTROVALVULA, 1);
+    digitalWrite(ELECTROVALVULA, 0);
     digitalWrite(INDICACION, 0);
     digitalWrite(ALERTA, 0);
     //mostrarElectroLCD();
     break;
 
   case 4:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 5:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 1);
     digitalWrite(ALERTA, 0);
     break;
 
   case 6:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     ALARMA();
     //SonidoAlerta(); 
@@ -642,7 +643,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 7:
-    digitalWrite(ELECTROVALVULA, 0);
+    digitalWrite(ELECTROVALVULA, 1);
     digitalWrite(INDICACION, 0);
     EasyBuzzer.stopBeep();
 
@@ -657,7 +658,7 @@ if(state == 8 && CM==0 && VM==0 && S20==0 && S80==0){
     break;
 
   case 8:
-    digitalWrite(ELECTROVALVULA,0);
+    digitalWrite(ELECTROVALVULA,1);
     Parpadeo();
     digitalWrite(ALERTA, 0);
 
